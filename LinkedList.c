@@ -21,7 +21,7 @@ struct LLNode {
     } content;
     struct LLNode *Next;
     struct LLNode *Prev;
-    List nodelist;
+    List owner;
 };
 
 
@@ -123,7 +123,7 @@ bool list_add_char(List alist, int index, char achar) {
     // init
     anode->Next = NULL;
     anode->Prev = NULL;
-    anode->nodelist = alist;
+    anode->owner = alist;
     anode->content.c = achar;
 
     // do action
@@ -145,7 +145,7 @@ bool list_add_int(List alist, int index, int aint) {
     // init
     anode->Next = NULL;
     anode->Prev = NULL;
-    anode->nodelist = alist;
+    anode->owner = alist;
     anode->content.i = aint;
 
     // do action
@@ -221,8 +221,49 @@ void node_get_int(ListNode anode, int *aint) {
 
 void node_remove(ListNode anode) {
     // check length, then remove acordingly
+    // not thread safe
     // pass
+    List owner = anode->owner;
+    if (owner->length == 1) {
+        free(anode);
+        owner->First = NULL;
+        owner->Last = NULL;
+        owner->length = 0;
+    }
+
+    else {
+        if (anode->Next == NULL) {
+            // rear end
+            owner->Last = anode->Prev;
+            owner->Last->Next = NULL;
+            free(anode);
+            owner->length --;
+        }
+
+        else if (anode->Prev == NULL) {
+            // front end
+            owner->First = anode->Next;
+            owner->First->Prev = NULL;
+            free(anode);
+            owner->length --;
+        }
+
+        else {
+            // middle
+            anode->Next->Prev = anode->Prev;
+            anode->Prev->Next = anode->Next;
+            free(anode);
+            owner-> length --;
+        }
+    }
 }
+
+bool list_remove_index(List alist, int index) {
+    ListNode anode; 
+    if ((anode = list_get_node(alist, index)) == NULL) return false;
+    node_remove(anode);
+}
+
 
 /************************** Add On functions **************************/
 

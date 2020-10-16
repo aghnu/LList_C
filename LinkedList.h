@@ -1,4 +1,5 @@
 // must be compiled with c11 for the use of _Generic keyword
+// not thread safe
 
 /*
 Gengyuan Huang
@@ -213,6 +214,28 @@ void node_get_char(ListNode anode, char *achar);
 // get int from the node
 void node_get_int(ListNode anode, int *aint);
 
+/*
+Function: node_remove
+    give a node that belongs to a list
+    remove it from the list and free the memory
+
+Parameter:
+    anode   - ListNode : a pointer to list node
+*/
+void node_remove(ListNode anode);
+
+/*
+Function: list_remove_index
+    give an index, and remove the node from the list
+
+Parameter:
+    alist   - List  : a pointer to list struct
+    index   - Int   : the index
+
+Return:
+    boolean value, true if succeed. false if index out of range
+*/
+bool list_remove_index(List alist, int index);
 
 
 /************************** Add On functions **************************/
