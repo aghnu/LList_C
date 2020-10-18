@@ -1,5 +1,5 @@
-// must be compiled with c11 for the use of _Generic keyword
 // not thread safe
+// if a list of custom type is created, user is responsible for freeing custom item's memory before remove any node 
 
 /*
 Gengyuan Huang
@@ -25,6 +25,9 @@ some new ideas:
         * can be implemented by combining two list 
         * (connect two linked nodes and free one list)
         * then convert to string
+
+rev1:
+    - remove overloading, replace with void pointer 
 */
 
 #ifndef LINKEDLIST_H
@@ -33,31 +36,18 @@ some new ideas:
 #include <stdbool.h>
 
 // linked list data type
-#define LLIST_MIX 0             // havent implemented 
-#define LLIST_INT 1
-#define LLIST_CHAR 2
-#define LLIST_CUSTOM 3          // havent implemented
+#define LLIST_CUSTOM 0              // address to a custom object
+#define LLIST_INT 1                 // int
+#define LLIST_CHAR 2                // char
+#define LLIST_DOUBLE 3              // double
+#define LLIST_FLOAT 4               // float
 
-// add item to list[index]
-#define list_add(list, index, item) _Generic    \
-((item),                                        \
-    int     : list_add_int,                     \
-    char    : list_add_char                     \
-)(list, index, item)
+/*
+Type: llist_t
+    list type
+*/
+typedef int llist_t;             // linked list type
 
-// get item from list[index]
-#define list_get(list, index, item) _Generic    \
-((item),                                        \
-    int*    : list_get_int,                     \
-    char*   : list_get_char                     \
-)(list, index, item)
-
-// get item from the node
-#define node_get(node, item) _Generic           \
-((item),                                        \
-    int*    : node_get_int,                     \
-    char*   : node_get_char                     \
-)(list, index, item)
 /*
 Type: ListNode
     a pointer of struct LLNode
@@ -70,19 +60,22 @@ Type: List
 */
 typedef struct LinkedList *List;
 
-
 /*
 Function: list_create
     given a list type, create an empty list
 
 Parameters:
-    type    - int   : item type of the list, value is defined in LinkedList.h
+    type    - llist_t   : item type of the list, value is defined in LinkedList.h
 
 Return:
     NULL    - error
     List    - a pointer to List
 */
-List list_create(int type);
+List list_create(llist_t type);
+
+/*******************************************************
+list functions
+*******************************************************/
 
 /*
 Function: list_get_type
@@ -94,7 +87,7 @@ Parameters:
 Return:
     an int representing the list type
 */
-int list_get_type(List alist);
+llist_t list_get_type(List alist);
 
 /*
 Function: list_get_length
@@ -109,50 +102,21 @@ Return:
 int list_get_length(List alist);
 
 /*
-Function: list_get_char
-    get the char of given index
+Function: list_get
+    get the item with the given index from the list
+    *(type *)list_get(...) to get non-custom items
+    (custom_type *)list_get(...) to get custom items
 
 Parameters:
     alist   - List  : a pointer to a list struct
     index   - int   : index of the item
-    p_char  - char* : pointer to a char
 
 Return:
-    true    - bool  : succeed, value can be trusted
-    false   - bool  : index out of range, failed
+    NULL if out of index, else, return the item at the index
+    if its not custom item, then an pointer to the value is returned
+    if custom item, then the custom item's address is returned
 */
-bool list_get_char(List alist, int index, char *p_char);
-
-/*
-Function: list_get_int
-    get the int of given index
-
-Parameters:
-    alist   - List  : a pointer to a list struct
-    index   - int   : index of the item
-    p_int   - int*  : pointer to an int
-
-Return:
-    true    - bool  : succeed, value can be trusted
-    false   - bool  : index out of range, failed
-*/
-bool list_get_int(List alist, int index, int *p_int);
-
-/*
-Function: list_add_char
-    add a char at given index of the list
-
-Parameters:
-    alist   - List  : a pointer to a list struct
-    index   - int   : index of the new char
-    achar   - char  : item to be added
-
-Return:
-    true    - bool : succeed
-    false   - bool : failed
-*/
-bool list_add_char(List alist, int index, char achar);
-
+void *list_get(List alist, int index);
 
 /*
 Function: list_get_node
@@ -170,19 +134,32 @@ Return:
 ListNode list_get_node(List alist, int index);
 
 /*
-Function: list_add_int
-    add an int at given index of the list
+Function: list_add
+    add an item at given index to the list
 
 Parameters:
     alist   - List  : a pointer to a list struct
     index   - int   : index of the new char
-    aint    - int   : item to be added
+    item    - void *  : address of the item
 
 Return:
     true    - bool : succeed
     false   - bool : failed
 */
-bool list_add_int(List alist, int index, int aint);
+bool list_add(List alist, int index, void *item);
+
+/*
+Function: list_remove
+    give an index, and remove the node from the list
+
+Parameter:
+    alist   - List  : a pointer to list struct
+    index   - Int   : the index
+
+Return:
+    boolean value, true if succeed. false if index out of range
+*/
+bool list_remove(List alist, int index);
 
 /*
 Function: list_free
@@ -202,44 +179,34 @@ Parameters:
 */
 void list_clear(List alist);
 
+/*******************************************************
+node functions
+*******************************************************/
+
+// extract item from the given node
+void *node_get(ListNode anode);
+
 // get next node
 ListNode node_next(ListNode anode);
 
 // get prev node
 ListNode node_prev(ListNode anode);
 
-// get char from the node
-void node_get_char(ListNode anode, char *achar);
-
-// get int from the node
-void node_get_int(ListNode anode, int *aint);
-
 /*
 Function: node_remove
     give a node that belongs to a list
     remove it from the list and free the memory
+    NOTE:
+        if using LLIST_CUSTOM type, free the item manually before calling this function
 
 Parameter:
     anode   - ListNode : a pointer to list node
 */
 void node_remove(ListNode anode);
 
-/*
-Function: list_remove_index
-    give an index, and remove the node from the list
-
-Parameter:
-    alist   - List  : a pointer to list struct
-    index   - Int   : the index
-
-Return:
-    boolean value, true if succeed. false if index out of range
-*/
-bool list_remove_index(List alist, int index);
-
-
-/************************** Add On functions **************************/
-
+/*******************************************************
+Add On functions
+*******************************************************/
 
 /*
 Function: list_to_string
@@ -248,12 +215,12 @@ Function: list_to_string
 
 Parameter:
     alist   - List  : a pointer to a list struct
+    astring - char* : address of the string (on heap memory)
 
 Return:
-    an \0 terminated char array that serve as a string
-    if error occurs, then return NULL
+    boolean value, false if failed, true if succeed.
 */
-char *list_to_string(List alist);
+bool list_to_string(List alist, char **astring);
 
 /*
 Function: string_to_list
@@ -268,5 +235,33 @@ Return:
     if error occurs, then return NULL
 */
 List string_to_list(char *string, int size);
+
+/*
+Function: string_dup
+    duplicate a string, and store the new string in heap
+
+Parameter:
+    string  - char* : target string
+    dup     - char**: double pointer of the new string
+
+Return:
+    false if failed, true if succeed.
+
+*/
+bool string_dup(char *string, int size, char **dup);
+
+/*
+Function: custom_to_array
+    this function gives all the custom pointer in a list of type LLIST_CUSTOM
+    user can then traverse all the pointer and free them if needed
+
+Parameters:
+    alist   - List  : a pointer to alist struct
+    items   - void **   : array of void * 
+
+Return:
+    boolean value, false if failed, true if succeed
+*/
+bool custom_to_array(List alist, void ***items);
 
 #endif
