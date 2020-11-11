@@ -136,21 +136,38 @@ bool list_remove(List alist, int index) {
     return true;
 }
 
-void list_free(List alist) {
-    list_clear(alist);          // clear all nodes
-    free(alist);                // free list itself
+void list_free(List *alist, void (*freefunction) (void*)) {
+    list_clear(*alist, freefunction);           // clear all nodes
+    free(*alist);                               // free list itself
+    *alist = NULL;
 }
 
-void list_clear(List alist) {
-    // clear all nodes in a list
+void list_clear(List alist, void (*freefunction) (void*)) {
+    
+    
     ListNode anode = alist->First;
-
-    // free all node
-    while (anode != NULL) {
-        ListNode todelete = anode;
-        anode = anode->Next;
-        free(todelete);
+    if (freefunction == NULL) {
+        // not customer type
+        // free all node
+        while (anode != NULL) {
+            ListNode todelete = anode;
+            anode = anode->Next;
+            free(todelete);
+        }
+    } else {
+        // customer type
+        // free all node
+        while (anode != NULL) {
+            ListNode todelete = anode;
+            anode = anode->Next;
+            freefunction((todelete->content.custom));
+            free(todelete);
+        }
     }
+
+
+
+
 
     // restore list info
     alist->First = NULL;
@@ -355,7 +372,7 @@ bool string_dup(char *string, int size, char **dup) {
 
 
     bool return_val = list_to_string(temp_list, dup);       // if false, no need to free memory
-    list_free(temp_list);
+    list_free(&temp_list, NULL);
     return return_val;
 }
 

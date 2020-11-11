@@ -164,20 +164,22 @@ bool list_remove(List alist, int index);
 /*
 Function: list_free
     clear the nodes and free the list
+    if freefunction is not NULL then freefunction will be used to free custom content
 
 Parameters:
-    alist   - List  : a pointer to a list struct to be freed
+    alist   - List  : a pointer to a list pointer to be freed
 */
-void list_free(List alist);
+void list_free(List *alist, void (*freefunction) (void*));
 
 /*
 Function: list_clear
-    empty the list, free all the nodes
+    empty the list, free all the nodes, if freefunction is not NULL then
+    free function will be used for freeing custom content
 
 Parameters:
     alist   - List  : a pointer to a list struct to be cleared
 */
-void list_clear(List alist);
+void list_clear(List alist, void (*freefunction) (void*));
 
 /*******************************************************
 node functions
